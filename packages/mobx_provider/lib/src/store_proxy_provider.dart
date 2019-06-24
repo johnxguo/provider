@@ -3,9 +3,9 @@ import 'package:mobx/mobx.dart';
 import 'package:mobx_provider/mobx_provider.dart';
 import 'package:provider/provider.dart';
 
-class ProxyProvider<T, R> extends ProxyProviderWidget
+class StoreProxyProvider<T, R> extends ProxyProviderWidget
     implements SingleChildCloneableWidget {
-  ProxyProvider({
+  StoreProxyProvider({
     Key key,
     this.initialBuilder,
     this.builder,
@@ -26,8 +26,8 @@ class ProxyProvider<T, R> extends ProxyProviderWidget
   _ProxyProviderState<T, R> createState() => _ProxyProviderState();
 
   @override
-  ProxyProvider<T, R> cloneWithChild(Widget child) {
-    return ProxyProvider(
+  StoreProxyProvider<T, R> cloneWithChild(Widget child) {
+    return StoreProxyProvider(
       key: key,
       initialBuilder: initialBuilder,
       builder: builder,
@@ -40,7 +40,7 @@ class ProxyProvider<T, R> extends ProxyProviderWidget
 }
 
 class _ProxyProviderState<T, R>
-    extends ProxyProviderState<ProxyProvider<T, R>> {
+    extends ProxyProviderState<StoreProxyProvider<T, R>> {
   ReactionDisposer _reactionDisposer;
   ActionController controller;
   R value;

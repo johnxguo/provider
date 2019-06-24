@@ -2,6 +2,18 @@ import 'package:flutter/widgets.dart';
 
 import 'provider.dart';
 
+abstract class ConsumerDelegate {
+  Widget build(Widget next());
+
+  void markNeedsBuild() => _element.markNeedsBuild();
+
+  Element _element;
+
+  BuildContext get context => _element;
+
+  void dispose() {}
+}
+
 /// {@template provider.consumer}
 /// Obtain [Provider<T>] from its ancestors and pass its value to [builder].
 ///
@@ -11,7 +23,7 @@ import 'provider.dart';
 ///
 /// {@macro provider.consumer.child}
 /// {@endtemplate}
-class Consumer<T> extends StatelessWidget {
+class Consumer<T> extends StatefulWidget {
   /// {@template provider.consumer.constructor}
   /// Consumes a [Provider<T>]
   /// {@endtemplate}
@@ -43,14 +55,49 @@ class Consumer<T> extends StatelessWidget {
   final Widget Function(BuildContext context, T value, Widget child) builder;
 
   @override
+  _ConsumerState<T> createState() => _ConsumerState<T>();
+}
+
+class _ConsumerState<T> extends State<Consumer<T>> {
+  List<ConsumerDelegate> delegates;
+
+  @override
+  void initState() {
+    super.initState();
+    delegates = consumerDelegatesBuilder
+        .map((f) => f().._element = context as Element)
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return builder(
-      context,
-      Provider.of<T>(context),
-      child,
-    );
+    var next = () => widget.builder(
+          context,
+          Provider.of<T>(context),
+          widget.child,
+        );
+
+    for (final delegate in delegates.reversed) {
+      final currentNext = next;
+      next = () => delegate.build(currentNext);
+    }
+
+    return next();
+  }
+
+  @override
+  void dispose() {
+    for (final delegate in delegates) {
+      delegate.dispose();
+    }
+    super.dispose();
   }
 }
+
+typedef ConsumerDelegateBuilder = ConsumerDelegate Function();
+
+final Set<ConsumerDelegateBuilder> consumerDelegatesBuilder =
+    <ConsumerDelegateBuilder>{};
 
 /// {@macro provider.consumer}
 class Consumer2<A, B> extends StatelessWidget {

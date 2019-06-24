@@ -7,6 +7,7 @@ class StoreProvider<T extends Store> extends ValueDelegateWidget<T>
   StoreProvider({
     Key key,
     ValueBuilder<T> builder,
+    // TODO: reactiveContext
     Widget child,
   }) : this._(
           key: key,
@@ -28,7 +29,7 @@ class StoreProvider<T extends Store> extends ValueDelegateWidget<T>
 
   StoreProvider._({
     Key key,
-    ValueAdaptiveDelegate<T> delegate,
+    ValueStateDelegate<T> delegate,
     this.updateShouldNotify,
     this.child,
   }) : super(key: key, delegate: delegate);
@@ -55,7 +56,7 @@ class StoreProvider<T extends Store> extends ValueDelegateWidget<T>
 }
 
 class _StoreBuilderAdaptiveDelegate<T extends Store>
-    extends ValueAdaptiveDelegate<T> {
+    extends ValueStateDelegate<T> {
   _StoreBuilderAdaptiveDelegate(this.builder);
 
   final ValueBuilder<T> builder;
@@ -65,16 +66,19 @@ class _StoreBuilderAdaptiveDelegate<T extends Store>
 
   @override
   void initDelegate() {
+    super.initDelegate();
     value = builder(context);
   }
 
   @override
   void didUpdateDelegate(_StoreBuilderAdaptiveDelegate<T> old) {
+    super.didUpdateDelegate(old);
     value = old.value;
   }
 
   @override
   void dispose() {
     value.dispose();
+    super.dispose();
   }
 }

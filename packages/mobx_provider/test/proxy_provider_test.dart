@@ -3,6 +3,7 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobx_provider/mobx_provider.dart';
 import 'package:mockito/mockito.dart';
+import 'package:provider/provider.dart';
 
 import 'common.dart';
 
@@ -23,7 +24,7 @@ class Foo extends StatelessWidget {
 }
 
 void main() {
-  group('ProxyProvider', () {
+  group('StoreProxyProvider', () {
     testWidgets('report error to FlutterError', (tester) async {
       final originOnError = FlutterError.onError;
       var errorMock = FlutterErrorMock();
@@ -35,7 +36,7 @@ void main() {
       await tester.pumpWidget(MultiProvider(
         providers: [
           Provider.value(value: 1),
-          ProxyProvider<int, Counter>(
+          StoreProxyProvider<int, Counter>(
             reactiveContext: reactiveContext,
             builder: (_, __, ___) => throw error,
           ),
@@ -62,7 +63,7 @@ void main() {
       await tester.pumpWidget(MultiProvider(
         providers: [
           Provider.value(value: 1),
-          ProxyProvider<int, Counter>(
+          StoreProxyProvider<int, Counter>(
             key: key,
             builder: (_, __, ___) => store,
             dispose: disposer,
@@ -87,7 +88,7 @@ void main() {
       await tester.pumpWidget(MultiProvider(
         providers: [
           Provider.value(value: 42),
-          ProxyProvider<int, double>(builder: (c, a, p) => a.toDouble()),
+          StoreProxyProvider<int, double>(builder: (c, a, p) => a.toDouble()),
         ],
         child: Container(key: key),
       ));
@@ -98,7 +99,7 @@ void main() {
       );
     });
     test('works with MultiProvider #2', () {
-      final provider = ProxyProvider<int, double>(
+      final provider = StoreProxyProvider<int, double>(
         key: const Key('42'),
         initialBuilder: (_) {},
         builder: (_, __, ___) {},
@@ -130,7 +131,7 @@ void main() {
       });
       final store = Counter();
 
-      final provider = ProxyProvider<int, Counter>(
+      final provider = StoreProxyProvider<int, Counter>(
         initialBuilder: (_) => store,
         builder: (_, value, model) => model..value = value,
       );
