@@ -2,17 +2,49 @@ import 'package:flutter/widgets.dart';
 
 import 'provider.dart';
 
+/// An object associated to [Consumer] to customize the [Consumer.builder] behavior.
+///
+/// It is associated to one and only one [Consumer] at a time, but a [Consumer]
+/// may be associated to multiple [ConsumerDelegate].
+///
+/// [ConsumerDelegate] is typically used by plugins, like `provider_mobx`.
+///
+/// See also:
+///
+///   * [Consumer], which a [ConsumerDelegate] is associated with.
+///   * [consumerDelegateBuilders], which is used to create a [ConsumerDelegate]
+///     when a [Consumer] is inserted in the widget tree.
 abstract class ConsumerDelegate {
+  /// A middleware that wraps [Consumer.builder].
+  ///
+  /// It is expected to always call `next`, but can do things before and after.
+  @protected
   Widget build(Widget next());
 
+  /// Ask the associated [Consumer] to rebuild.
+  @protected
   void markNeedsBuild() => _element.markNeedsBuild();
 
   Element _element;
 
+  /// The [BuildContext] of the associated [Consumer].
+  @protected
   BuildContext get context => _element;
 
+  /// A hook on the moment where [Consumer] is removed from the tree.
+  @protected
   void dispose() {}
 }
+
+typedef ConsumerDelegateBuilder = ConsumerDelegate Function();
+
+/// A set of functions used to create a [ConsumerDelegate].
+///
+/// [Consumer] will call these functions when inserted in the widget tree,
+/// to create a [ConsumerDelegate].
+final Set<ConsumerDelegateBuilder> consumerDelegateBuilders =
+// ignore: prefer_collection_literals, we want to support sdk < 2.2.2
+    Set<ConsumerDelegateBuilder>();
 
 /// {@template provider.consumer}
 /// Obtain [Provider<T>] from its ancestors and pass its value to [builder].
@@ -23,7 +55,7 @@ abstract class ConsumerDelegate {
 ///
 /// {@macro provider.consumer.child}
 /// {@endtemplate}
-class Consumer<T> extends StatefulWidget {
+class Consumer<T> extends _ConsumerBase {
   /// {@template provider.consumer.constructor}
   /// Consumes a [Provider<T>]
   /// {@endtemplate}
@@ -55,27 +87,39 @@ class Consumer<T> extends StatefulWidget {
   final Widget Function(BuildContext context, T value, Widget child) builder;
 
   @override
-  _ConsumerState<T> createState() => _ConsumerState<T>();
+  Widget build(BuildContext context) {
+    return builder(
+      context,
+      Provider.of<T>(context),
+      child,
+    );
+  }
 }
 
-class _ConsumerState<T> extends State<Consumer<T>> {
+abstract class _ConsumerBase extends StatefulWidget {
+  _ConsumerBase({Key key}) : super(key: key);
+
+  @protected
+  Widget build(BuildContext context);
+
+  @override
+  _ConsumerState createState() => _ConsumerState();
+}
+
+class _ConsumerState extends State<_ConsumerBase> {
   List<ConsumerDelegate> delegates;
 
   @override
   void initState() {
     super.initState();
-    delegates = consumerDelegatesBuilder
+    delegates = consumerDelegateBuilders
         .map((f) => f().._element = context as Element)
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    var next = () => widget.builder(
-          context,
-          Provider.of<T>(context),
-          widget.child,
-        );
+    var next = () => widget.build(context);
 
     for (final delegate in delegates.reversed) {
       final currentNext = next;
@@ -94,13 +138,8 @@ class _ConsumerState<T> extends State<Consumer<T>> {
   }
 }
 
-typedef ConsumerDelegateBuilder = ConsumerDelegate Function();
-
-final Set<ConsumerDelegateBuilder> consumerDelegatesBuilder =
-    <ConsumerDelegateBuilder>{};
-
 /// {@macro provider.consumer}
-class Consumer2<A, B> extends StatelessWidget {
+class Consumer2<A, B> extends _ConsumerBase {
   /// {@macro provider.consumer.constructor}
   Consumer2({
     Key key,
@@ -130,7 +169,7 @@ class Consumer2<A, B> extends StatelessWidget {
 }
 
 /// {@macro provider.consumer}
-class Consumer3<A, B, C> extends StatelessWidget {
+class Consumer3<A, B, C> extends _ConsumerBase {
   /// {@macro provider.consumer.constructor}
   Consumer3({
     Key key,
@@ -161,7 +200,7 @@ class Consumer3<A, B, C> extends StatelessWidget {
 }
 
 /// {@macro provider.consumer}
-class Consumer4<A, B, C, D> extends StatelessWidget {
+class Consumer4<A, B, C, D> extends _ConsumerBase {
   /// {@macro provider.consumer.constructor}
   Consumer4({
     Key key,
@@ -192,7 +231,7 @@ class Consumer4<A, B, C, D> extends StatelessWidget {
 }
 
 /// {@macro provider.consumer}
-class Consumer5<A, B, C, D, E> extends StatelessWidget {
+class Consumer5<A, B, C, D, E> extends _ConsumerBase {
   /// {@macro provider.consumer.constructor}
   Consumer5({
     Key key,
@@ -225,7 +264,7 @@ class Consumer5<A, B, C, D, E> extends StatelessWidget {
 }
 
 /// {@macro provider.consumer}
-class Consumer6<A, B, C, D, E, F> extends StatelessWidget {
+class Consumer6<A, B, C, D, E, F> extends _ConsumerBase {
   /// {@macro provider.consumer.constructor}
   Consumer6({
     Key key,
